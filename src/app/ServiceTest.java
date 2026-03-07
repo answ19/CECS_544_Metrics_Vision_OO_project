@@ -1,6 +1,6 @@
 package app;
 
-import model.*;
+import model.*;          // includes ProjectData, FPType, Complexity, FPResult
 import service.FPService;
 
 public class ServiceTest {
@@ -16,8 +16,15 @@ public class ServiceTest {
 
         FPService service = new FPService();
 
-        System.out.println("Total: " + service.computeTotal(data));
-        System.out.println("VAF Sum: " + service.computeVafSum(data));
-        System.out.println("Final FP: " + service.computeFinalFP(data));
+
+        FPResult r = service.compute(data);
+
+        System.out.println("Total: " + r.getTotalCount());
+        System.out.println("VAF: " + r.getVafSum());
+        System.out.println("Final: " + r.getFinalFp());
+
+        // System.out.println("Total (old): " + service.computeTotal(data));
+        // System.out.println("VAF Sum (old): " + service.computeVafSum(data));
+        // System.out.println("Final FP (old): " + service.computeFinalFP(data));
     }
 }

@@ -1,6 +1,7 @@
 package service;
 
 import model.*;
+import model.FPResult;
 
 public class FPService {
     private static final int[] EI_W = {3,4,6};
@@ -48,5 +49,16 @@ public class FPService {
         int total = computeTotal(data);
         int vafSum = computeVafSum(data);
         return total * (0.65 + (0.01 * vafSum));
+    }
+
+    public FPResult compute(model.ProjectData data) {
+        int total = computeTotal(data);
+        int vaf = computeVafSum(data);
+        double finalFp = computeFinalFP(data);
+        return new FPResult(total, vaf, finalFp);
+    }
+
+    public double round2(double value) {
+        return Math.round(value * 100.0) / 100.0;
     }
 }
