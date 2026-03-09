@@ -4,7 +4,11 @@ import javax.swing.*;
         import javax.swing.border.TitledBorder;
 import java.awt.*;
         import java.util.LinkedHashMap;
+
 import java.util.Map;
+import model.*;
+import service.FPService;
+
 
 public class FunctionPointPanel extends JPanel {
 
@@ -23,7 +27,12 @@ public class FunctionPointPanel extends JPanel {
     private final JButton resetBtn = new JButton("Reset");
     private final JButton changeLanguageBtn = new JButton("Change Language");
 
-    public FunctionPointPanel() {
+    private final ProjectData projectData;
+    private final FPService fpService;
+
+    public FunctionPointPanel(ProjectData data, FPService service) {
+        this.projectData = data;
+        this.fpService = service;
         setLayout(new BorderLayout(12, 12));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
@@ -31,9 +40,67 @@ public class FunctionPointPanel extends JPanel {
         add(buildCenterForm(), BorderLayout.CENTER);
         add(buildBottomPanel(), BorderLayout.SOUTH);
 
-        wireResetOnlyForNow(); // Day 2: only reset is wired
+        wireResetOnlyForNow();// Day 2: only reset is wired
+        wireCompute();
     }
 
+    private int readNonNegativeInt(JTextField field, String label) {
+        String text = field.getText().trim();
+        if (text.isEmpty()) return 0;
+
+        int val = Integer.parseInt(text);
+        if (val < 0) throw new NumberFormatException(label + " cannot be negative");
+        return val;
+    }
+
+    private void setEntryFromUI(FPType type, String key, String label) {
+        int count = readNonNegativeInt(countFields.get(key), label + " count");
+
+        ButtonModel selection = complexityGroups.get(key).getSelection();
+        String cmd = (selection == null) ? "AVERAGE" : selection.getActionCommand(); // SIMPLE/AVERAGE/COMPLEX
+
+        projectData.getEntry(type).setCount(count);
+        projectData.getEntry(type).setComplexity(Complexity.valueOf(cmd));
+    }
+
+    private void updateProjectDataFromUI() {
+        setEntryFromUI(FPType.EI,  "EI",  "EI");
+        setEntryFromUI(FPType.EO,  "EO",  "EO");
+        setEntryFromUI(FPType.EQ,  "EQ",  "EQ");
+        setEntryFromUI(FPType.ILF, "ILF", "ILF");
+        setEntryFromUI(FPType.EIF, "EIF", "EIF");
+    }
+
+    private void wireCompute() {
+        computeBtn.addActionListener(e -> {
+            try {
+                updateProjectDataFromUI();
+
+                int total = fpService.computeTotal(projectData);
+                int vafSum = fpService.computeVafSum(projectData);
+                double finalFp = fpService.computeFinalFP(projectData);
+
+                totalCountValue.setText(String.valueOf(total));
+                vafSumValue.setText(String.valueOf(vafSum));
+                finalFpValue.setText(String.format("%.2f", finalFp));
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Please enter valid non-negative integers.\n" + ex.getMessage(),
+                        "Input Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Something went wrong: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
+    }
     private JComponent buildTopHeader() {
         JPanel top = new JPanel(new BorderLayout());
 
@@ -179,6 +246,7 @@ public class FunctionPointPanel extends JPanel {
     private void wireResetOnlyForNow() {
         resetBtn.addActionListener(e -> resetForm());
     }
+
 
     private void resetForm() {
         // Reset counts
