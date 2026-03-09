@@ -2,10 +2,16 @@ package ui;
 
 import javax.swing.*;
         import java.awt.*;
+import model.ProjectData;
+import service.FPService;
 
 public class MainFrame extends JFrame {
 
     private JPanel mainPanel;
+
+    private final ProjectData projectData = new ProjectData();
+
+    private final FPService fpService = new FPService();
 
     public MainFrame() {
         setTitle("CECS 544 Metrics Suite");
@@ -19,6 +25,7 @@ public class MainFrame extends JFrame {
         add(mainPanel);
 
         setVisible(true);
+
     }
 
     private void createMenuBar() {
@@ -46,7 +53,7 @@ public class MainFrame extends JFrame {
 
         enterFPItem.addActionListener(e -> {
             mainPanel.removeAll();
-            mainPanel.add(new FunctionPointPanel(), BorderLayout.CENTER);
+            mainPanel.add(new FunctionPointPanel(projectData, fpService), BorderLayout.CENTER);
             mainPanel.revalidate();
             mainPanel.repaint();
         });
