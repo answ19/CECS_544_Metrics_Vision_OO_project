@@ -42,6 +42,7 @@ public class FunctionPointPanel extends JPanel {
 
         wireResetOnlyForNow();// Day 2: only reset is wired
         wireCompute();
+        wireLanguageDialog();
     }
 
     private int readNonNegativeInt(JTextField field, String label) {
@@ -101,6 +102,19 @@ public class FunctionPointPanel extends JPanel {
             }
         });
     }
+    private void wireLanguageDialog() {
+        changeLanguageBtn.addActionListener(e -> {
+            Window w = SwingUtilities.getWindowAncestor(this);
+            LanguageDialog dialog = new LanguageDialog(w, projectData.getLanguage());
+            dialog.setVisible(true);
+
+            if (dialog.isSaved()) {
+                projectData.setLanguage(dialog.getSelectedLanguage());
+                setCurrentLanguage(projectData.getLanguage());
+            }
+        });
+    }
+
     private JComponent buildTopHeader() {
         JPanel top = new JPanel(new BorderLayout());
 
