@@ -1,28 +1,45 @@
 package ui;
 
 import javax.swing.*;
-        import java.awt.*;
+import java.awt.*;
 
 public class LanguageDialog extends JDialog {
 
-    private final JComboBox<String> languageBox;
+    private JComboBox<String> languageBox;
     private boolean saved = false;
 
     public LanguageDialog(Window owner, String currentLanguage) {
         super(owner, "Select Language", ModalityType.APPLICATION_MODAL);
 
+        setLayout(new BorderLayout(10,10));
+
+        JPanel center = new JPanel(new GridBagLayout());
+        GridBagConstraints gc = new GridBagConstraints();
+
+        gc.insets = new Insets(8,8,8,8);
+        gc.fill = GridBagConstraints.HORIZONTAL;
+
+        gc.gridx = 0;
+        gc.gridy = 0;
+        center.add(new JLabel("Programming Language:"), gc);
+
+        gc.gridx = 1;
+
         String[] languages = {
-                "Java", "C++", "C#", "Python", "Ruby", "Objective C"
+                "Java",
+                "C++",
+                "C#",
+                "Python",
+                "Ruby",
+                "Objective C"
         };
-
-        setLayout(new BorderLayout(10, 10));
-
-        JPanel center = new JPanel(new FlowLayout());
-        center.add(new JLabel("Programming Language:"));
 
         languageBox = new JComboBox<>(languages);
         languageBox.setSelectedItem(currentLanguage);
-        center.add(languageBox);
+
+        center.add(languageBox, gc);
+
+        add(center, BorderLayout.CENTER);
 
         JButton ok = new JButton("OK");
         JButton cancel = new JButton("Cancel");
@@ -38,7 +55,6 @@ public class LanguageDialog extends JDialog {
         bottom.add(cancel);
         bottom.add(ok);
 
-        add(center, BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
 
         pack();
