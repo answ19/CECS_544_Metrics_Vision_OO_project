@@ -38,7 +38,6 @@ public class ProjectData {
         this.language = language;
     }
 
-    // --------- Add these convenience accessors ---------
     public String getProjectName() {
         return projectName;
     }
@@ -55,21 +54,16 @@ public class ProjectData {
         this.creatorName = creatorName;
     }
 
-    // optional helper to reset all VAFs to zero
-    public void resetVaf() {
-        for (int i = 0; i < vaf.length; i++) vaf[i] = 0;
+    public void resetEntries() {
+        for (FPType type : FPType.values()) {
+            entries.get(type).setCount(0);
+            entries.get(type).setComplexity(Complexity.AVERAGE);
+        }
     }
 
-    // optional helper to reset all FP entries to defaults
-    public void resetEntries() {
-        for (FPType t : FPType.values()) {
-            FPEntry e = entries.get(t);
-            if (e != null) {
-                e.setCount(0);
-                e.setComplexity(Complexity.AVERAGE);
-            } else {
-                entries.put(t, new FPEntry());
-            }
+    public void resetVaf() {
+        for (int i = 0; i < vaf.length; i++) {
+            vaf[i] = 0;
         }
     }
 }

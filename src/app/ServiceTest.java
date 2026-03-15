@@ -1,23 +1,79 @@
 package app;
 
+
+
 import model.*;
-import service.FPService;
+
+import service.FileService;
+
+
+
+import java.io.File;
+
+
 
 public class ServiceTest {
-    public static void main(String[] args) {
 
-        ProjectData data = new ProjectData();
+    public static void main(String[] args) throws Exception {
 
-        data.getEntry(FPType.EI).setCount(5);
-        data.getEntry(FPType.EI).setComplexity(Complexity.AVERAGE);
+        ProjectData d = new ProjectData();
 
-        data.setVaf(0, 3);
-        data.setVaf(1, 2);
 
-        FPService service = new FPService();
 
-        System.out.println("Total: " + service.computeTotal(data));
-        System.out.println("VAF Sum: " + service.computeVafSum(data));
-        System.out.println("Final FP: " + service.computeFinalFP(data));
+        d.setProjectName("DemoProject");
+
+        d.setCreatorName("Team");
+
+        d.setLanguage("Python");
+
+
+
+        d.getEntry(FPType.EI).setCount(5);
+
+        d.getEntry(FPType.EI).setComplexity(Complexity.COMPLEX);
+
+
+
+        d.getEntry(FPType.EO).setCount(3);
+
+        d.getEntry(FPType.EO).setComplexity(Complexity.SIMPLE);
+
+
+
+        d.getVaf()[0] = 4;
+
+        d.getVaf()[1] = 2;
+
+
+
+        FileService fs = new FileService();
+
+        File file = new File("test.ms");
+
+
+
+        fs.save(d, file);
+
+
+
+        ProjectData loaded = fs.load(file);
+
+
+
+        System.out.println("Project Name: " + loaded.getProjectName());
+
+        System.out.println("Creator: " + loaded.getCreatorName());
+
+        System.out.println("Language: " + loaded.getLanguage());
+
+        System.out.println("EI Count: " + loaded.getEntry(FPType.EI).getCount());
+
+        System.out.println("EI Complexity: " + loaded.getEntry(FPType.EI).getComplexity());
+
+        System.out.println("VAF[0]: " + loaded.getVaf()[0]);
+
+        System.out.println("VAF[1]: " + loaded.getVaf()[1]);
+
     }
+
 }
