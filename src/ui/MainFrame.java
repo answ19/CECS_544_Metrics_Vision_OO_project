@@ -4,6 +4,7 @@ import javax.swing.*;
         import java.awt.*;
 import model.ProjectData;
 import service.FPService;
+import model.*;
 
 public class MainFrame extends JFrame {
 
@@ -75,5 +76,33 @@ public class MainFrame extends JFrame {
         menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
+        newItem.addActionListener(e -> {
+            NewProjectDialog dialog = new NewProjectDialog(this);
+            dialog.setVisible(true);
+
+            if (dialog.isSaved()) {
+
+                projectData.setProjectName(dialog.getProjectName());
+                projectData.setCreatorName(dialog.getCreatorName());
+                projectData.setLanguage("Java");
+
+                for (FPType type : FPType.values()) {
+                    projectData.getEntry(type).setCount(0);
+                    projectData.getEntry(type).setComplexity(Complexity.AVERAGE);
+                }
+
+                for (int i = 0; i < projectData.getVaf().length; i++) {
+                    projectData.getVaf()[i] = 0;
+                }
+
+                setTitle("CECS 544 Metrics Suite - " + projectData.getProjectName());
+
+                mainPanel.removeAll();
+                mainPanel.revalidate();
+                mainPanel.repaint();
+            }
+        });
+
+
     }
 }
