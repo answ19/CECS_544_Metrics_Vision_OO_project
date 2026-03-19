@@ -5,6 +5,9 @@ import javax.swing.*;
 import model.ProjectData;
 import service.FPService;
 import model.*;
+import service.FileService;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.File;
 
 public class MainFrame extends JFrame {
 
@@ -13,6 +16,8 @@ public class MainFrame extends JFrame {
     private final ProjectData projectData = new ProjectData();
 
     private final FPService fpService = new FPService();
+
+    private final FileService fileService = new FileService();
 
     public MainFrame() {
         setTitle("CECS 544 Metrics Suite");
@@ -54,7 +59,10 @@ public class MainFrame extends JFrame {
 
         enterFPItem.addActionListener(e -> {
             mainPanel.removeAll();
-            mainPanel.add(new FunctionPointPanel(projectData, fpService), BorderLayout.CENTER);
+            FunctionPointPanel panel = new FunctionPointPanel(projectData, fpService);
+            panel.loadFromProjectData();
+
+            mainPanel.add(panel, BorderLayout.CENTER);
             mainPanel.revalidate();
             mainPanel.repaint();
         });
@@ -66,7 +74,82 @@ public class MainFrame extends JFrame {
         JMenu preferencesMenu = new JMenu("Preferences");
         JMenuItem languageItem = new JMenuItem("Language");
         preferencesMenu.add(languageItem);
+        languageItem.addActionListener(e -> {
+            LanguageDialog dialog = new LanguageDialog(this, projectData.getLanguage());
+            dialog.setVisible(true);
 
+            if (dialog.isSaved()) {
+                projectData.setLanguage(dialog.getSelectedLanguage());
+                JOptionPane.showMessageDialog(this,
+                        "Language changed to: " + projectData.getLanguage());
+            }
+        });
+
+        saveItem.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new FileNameExtensionFilter("Metrics Suite Files (*.ms)", "ms"));
+
+            int result = chooser.showSaveDialog(this);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File file = chooser.getSelectedFile();
+
+                try {
+                    fileService.save(projectData, file);
+                    JOptionPane.showMessageDialog(this, "Project saved successfully.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "Save failed: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        openItem.addActionListener(e -> {
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new FileNameExtensionFilter("Metrics Suite Files (*.ms)", "ms"));
+
+            int result = chooser.showOpenDialog(this);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File file = chooser.getSelectedFile();
+
+                try {
+                    ProjectData loaded = fileService.load(file);
+                    projectData.setProjectName(loaded.getProjectName());
+                    projectData.setCreatorName(loaded.getCreatorName());
+                    projectData.setLanguage(loaded.getLanguage());
+
+                    for (FPType type : FPType.values()) {
+                        projectData.getEntry(type).setCount(loaded.getEntry(type).getCount());
+                        projectData.getEntry(type).setComplexity(loaded.getEntry(type).getComplexity());
+                    }
+
+                    System.arraycopy(loaded.getVaf(), 0, projectData.getVaf(), 0, 14);
+
+                    mainPanel.removeAll();
+
+                    FunctionPointPanel panel = new FunctionPointPanel(projectData, fpService);
+                    panel.loadFromProjectData();
+
+                    mainPanel.add(panel, BorderLayout.CENTER);
+
+                    mainPanel.revalidate();
+                    mainPanel.repaint();
+
+                    setTitle("CECS 544 Metrics Suite - " + projectData.getProjectName());
+
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "Open failed: " + ex.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+            }
+        });
         // Help Menu
         JMenu helpMenu = new JMenu("Help");
 
