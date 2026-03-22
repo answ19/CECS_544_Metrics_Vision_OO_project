@@ -39,6 +39,7 @@ public class MainFrame extends JFrame {
 
         // File Menu
         JMenu fileMenu = new JMenu("File");
+        JMenu editMenu = new JMenu("Edit");
         JMenuItem newItem = new JMenuItem("New");
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem saveItem = new JMenuItem("Save");
@@ -154,6 +155,7 @@ public class MainFrame extends JFrame {
         JMenu helpMenu = new JMenu("Help");
 
         menuBar.add(fileMenu);
+        menuBar.add(editMenu);
         menuBar.add(metricsMenu);
         menuBar.add(preferencesMenu);
         menuBar.add(helpMenu);
