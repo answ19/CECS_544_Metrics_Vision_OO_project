@@ -8,6 +8,8 @@ import java.awt.*;
 import java.util.Map;
 import model.*;
 import service.FPService;
+import service.CodeSizeService;
+
 
 
 public class FunctionPointPanel extends JPanel {
@@ -30,6 +32,10 @@ public class FunctionPointPanel extends JPanel {
     private final ProjectData projectData;
     private final FPService fpService;
 
+    private final JLabel codeSizeValue = new JLabel("—");
+    private final JButton computeCodeSizeBtn = new JButton("Compute Code Size");
+    private final CodeSizeService codeSizeService = new CodeSizeService();
+
     public FunctionPointPanel(ProjectData data, FPService service) {
         this.projectData = data;
         this.fpService = service;
@@ -43,6 +49,8 @@ public class FunctionPointPanel extends JPanel {
         wireResetOnlyForNow();// Day 2: only reset is wired
         wireCompute();
         wireLanguageDialog();
+        wireCodeSize();
+        loadFromProjectData();
     }
 
     private int readNonNegativeInt(JTextField field, String label) {
@@ -71,7 +79,45 @@ public class FunctionPointPanel extends JPanel {
         setEntryFromUI(FPType.ILF, "ILF", "ILF");
         setEntryFromUI(FPType.EIF, "EIF", "EIF");
     }
+    public void loadFromProjectData() {
+            loadOne(FPType.EI, "EI");
+            loadOne(FPType.EO, "EO");
+            loadOne(FPType.EQ, "EQ");
+            loadOne(FPType.ILF, "ILF");
+            loadOne(FPType.EIF, "EIF");
 
+            int vafSum = fpService.computeVafSum(projectData);
+            vafSumValue.setText(String.valueOf(vafSum));
+
+            int total = fpService.computeTotal(projectData);
+            totalCountValue.setText(String.valueOf(total));
+
+            double fp = fpService.computeFinalFP(projectData);
+            finalFpValue.setText(String.format("%.2f", fp));
+
+            setCurrentLanguage(projectData.getLanguage());}
+
+            private void loadOne(FPType type, String key) {
+            FPEntry entry = projectData.getEntry(type);
+
+            JTextField field = countFields.get(key);
+            if (field != null) {
+                field.setText(String.valueOf(entry.getCount()));
+            }
+
+            ButtonGroup group = complexityGroups.get(key);
+            if (group != null) {
+                String complexity = entry.getComplexity().name();
+
+                for (java.util.Enumeration<AbstractButton> buttons = group.getElements(); buttons.hasMoreElements();) {
+                    AbstractButton button = buttons.nextElement();
+                    if (button.getActionCommand().equals(complexity)) {
+                        button.setSelected(true);
+                        break;
+                    }
+                }
+            }
+    }
     private void wireCompute() {
         computeBtn.addActionListener(e -> {
             try {
@@ -114,7 +160,33 @@ public class FunctionPointPanel extends JPanel {
             }
         });
     }
+    private void wireCodeSize() {
+        computeCodeSizeBtn.addActionListener(e -> {
+            try {
+                updateProjectDataFromUI();
 
+                double finalFp = fpService.computeFinalFP(projectData);
+                String language = projectData.getLanguage();
+
+                if (language == null || language.isBlank()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Please select a language first.",
+                            "Language Required",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                int codeSize = codeSizeService.computeCodeSize(language, finalFp);
+                codeSizeValue.setText(String.format("%,d", codeSize));
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Could not compute code size: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+    }
     private JComponent buildTopHeader() {
         JPanel top = new JPanel(new BorderLayout());
 
@@ -238,6 +310,9 @@ public class FunctionPointPanel extends JPanel {
         finalFpValue.setFont(new Font("Arial", Font.BOLD, 12));
         results.add(finalFpValue);
 
+        results.add(new JLabel("Code Size:"));
+        results.add(codeSizeValue);
+
         bottom.add(results, BorderLayout.CENTER);
 
         // Buttons panel
@@ -246,6 +321,7 @@ public class FunctionPointPanel extends JPanel {
         buttons.add(resetBtn);   // wired today
         buttons.add(computeBtn); // wiring Day 3
         bottom.add(buttons, BorderLayout.SOUTH);
+        buttons.add(computeCodeSizeBtn);
 
         return bottom;
     }
@@ -283,6 +359,7 @@ public class FunctionPointPanel extends JPanel {
         totalCountValue.setText("—");
         vafSumValue.setText("—");
         finalFpValue.setText("—");
+
     }
 
     // Getters for Day 3 wiring
