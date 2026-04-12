@@ -2,63 +2,95 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class LanguageDialog extends JDialog {
 
-    private JComboBox<String> languageBox;
     private boolean saved = false;
+    private String selectedLanguage;
+
+    private final Map<String, JRadioButton> languageButtons = new LinkedHashMap<>();
+
+    private static final String[] LANGUAGES = {
+            "Assembler",
+            "Ada 95",
+            "C",
+            "C++",
+            "C#",
+            "COBOL",
+            "FORTRAN",
+            "HTML",
+            "Java",
+            "JavaScript",
+            "VBScript",
+            "Visual Basic"
+    };
 
     public LanguageDialog(Window owner, String currentLanguage) {
         super(owner, "Select Language", ModalityType.APPLICATION_MODAL);
 
-        setLayout(new BorderLayout(10,10));
+        this.selectedLanguage = currentLanguage;
 
-        JPanel center = new JPanel(new GridBagLayout());
-        GridBagConstraints gc = new GridBagConstraints();
+        setLayout(new BorderLayout(10, 10));
 
-        gc.insets = new Insets(8,8,8,8);
-        gc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        gc.gridx = 0;
-        gc.gridy = 0;
-        center.add(new JLabel("Programming Language:"), gc);
+        JLabel heading = new JLabel("Select one language");
+        heading.setFont(new Font("Arial", Font.BOLD, 12));
+        mainPanel.add(heading, BorderLayout.NORTH);
 
-        gc.gridx = 1;
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
 
-        String[] languages = {
-                "Java",
-                "C++",
-                "C#",
-                "Python",
-                "Ruby",
-                "Objective C"
-        };
+        ButtonGroup group = new ButtonGroup();
 
-        languageBox = new JComboBox<>(languages);
-        languageBox.setSelectedItem(currentLanguage);
+        for (String language : LANGUAGES) {
+            JRadioButton radio = new JRadioButton(language);
+            radio.setAlignmentX(Component.LEFT_ALIGNMENT);
+            group.add(radio);
+            listPanel.add(radio);
+            languageButtons.put(language, radio);
 
-        center.add(languageBox, gc);
+            if (language.equals(currentLanguage)) {
+                radio.setSelected(true);
+                selectedLanguage = language;
+            }
 
-        add(center, BorderLayout.CENTER);
+            radio.addActionListener(e -> selectedLanguage = language);
+        }
 
-        JButton ok = new JButton("OK");
-        JButton cancel = new JButton("Cancel");
+        JScrollPane scrollPane = new JScrollPane(listPanel);
+        scrollPane.setPreferredSize(new Dimension(180, 260));
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        ok.addActionListener(e -> {
+        JButton doneButton = new JButton("Done");
+        doneButton.addActionListener(e -> {
+            if (selectedLanguage == null || selectedLanguage.isBlank()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Please select a language.",
+                        "Selection Required",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
             saved = true;
             setVisible(false);
+            dispose();
         });
 
-        cancel.addActionListener(e -> setVisible(false));
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        bottom.add(doneButton);
 
-        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        bottom.add(cancel);
-        bottom.add(ok);
-
+        add(mainPanel, BorderLayout.CENTER);
         add(bottom, BorderLayout.SOUTH);
 
         pack();
         setLocationRelativeTo(owner);
+        setResizable(false);
     }
 
     public boolean isSaved() {
@@ -66,6 +98,6 @@ public class LanguageDialog extends JDialog {
     }
 
     public String getSelectedLanguage() {
-        return (String) languageBox.getSelectedItem();
+        return selectedLanguage;
     }
 }
