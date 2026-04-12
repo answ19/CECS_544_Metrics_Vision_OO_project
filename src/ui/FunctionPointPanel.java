@@ -26,7 +26,7 @@ public class FunctionPointPanel extends JPanel {
     private final JButton computeBtn = new JButton("Compute");
     private final JButton vafBtn = new JButton("VAF...");
     private final JButton resetBtn = new JButton("Reset");
-    private final Map<String, JTextField> rowTotalFields = new LinkedHashMap<>();
+    //private final Map<String, JTextField> rowTotalFields = new LinkedHashMap<>();
     //private final JButton changeLanguageBtn = new JButton("Change Language");
 
 
@@ -503,5 +503,9 @@ public class FunctionPointPanel extends JPanel {
 
     public void setCurrentLanguage(String lang) {
         currentLanguageValue.setText(lang);
+    }
+
+    public ProjectData getProjectData() {
+        return projectData;
     }
 }
