@@ -26,14 +26,16 @@ public class LanguageDialog extends JDialog {
         gc.gridx = 1;
 
         String[] languages = {
-                "Java",
-                "C++",
-                "C#",
-                "Python",
-                "Ruby",
-                "Objective C"
+                "Assembler", "Ada 95", "C", "C++", "C#", "COBOL",
+                "FORTRAN", "HTML", "Java", "JavaScript", "VBScript", "Visual Basic"
         };
 
+        JList<String> languageList = new JList<>(languages);
+        languageList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        languageList.setSelectedValue(currentLanguage, true);
+
+        JScrollPane scrollPane = new JScrollPane(languageList);
+        add(scrollPane, BorderLayout.CENTER);
         languageBox = new JComboBox<>(languages);
         languageBox.setSelectedItem(currentLanguage);
 

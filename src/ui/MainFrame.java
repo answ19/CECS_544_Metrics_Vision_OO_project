@@ -18,7 +18,7 @@ public class MainFrame extends JFrame {
     private final FPService fpService = new FPService();
 
     private final FileService fileService = new FileService();
-
+    private JTabbedPane tabbedPane;
     public MainFrame() {
         setTitle("CECS 544 Metrics Suite");
         setSize(800, 600);
@@ -28,8 +28,10 @@ public class MainFrame extends JFrame {
         createMenuBar();
 
         mainPanel = new JPanel(new BorderLayout());
-        add(mainPanel);
+        tabbedPane = new JTabbedPane();
 
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
+        add(mainPanel);
         setVisible(true);
 
     }
@@ -59,15 +61,16 @@ public class MainFrame extends JFrame {
         JMenuItem enterFPItem = new JMenuItem("Enter FP Data");
 
         enterFPItem.addActionListener(e -> {
-            mainPanel.removeAll();
             FunctionPointPanel panel = new FunctionPointPanel(projectData, fpService);
             panel.loadFromProjectData();
 
-            mainPanel.add(panel, BorderLayout.CENTER);
-            mainPanel.revalidate();
-            mainPanel.repaint();
-        });
+            String tabTitle = projectData.getProjectName().isBlank()
+                    ? "SampleFP"
+                    : projectData.getProjectName();
 
+            tabbedPane.addTab(tabTitle, panel);
+            tabbedPane.setSelectedComponent(panel);
+        });
         fpMenu.add(enterFPItem);
         metricsMenu.add(fpMenu);
 
@@ -158,6 +161,8 @@ public class MainFrame extends JFrame {
         menuBar.add(editMenu);
         menuBar.add(metricsMenu);
         menuBar.add(preferencesMenu);
+        JMenu projectCodeMenu = new JMenu("Project code");
+        menuBar.add(projectCodeMenu);
         menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);

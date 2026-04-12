@@ -1,9 +1,9 @@
 package ui;
 
 import javax.swing.*;
-        import javax.swing.border.TitledBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
-        import java.util.LinkedHashMap;
+import java.util.LinkedHashMap;
 
 import java.util.Map;
 import model.*;
@@ -23,18 +23,32 @@ public class FunctionPointPanel extends JPanel {
     private final JLabel finalFpValue = new JLabel("—");
 
     private final JLabel currentLanguageValue = new JLabel("Java");
-
     private final JButton computeBtn = new JButton("Compute");
     private final JButton vafBtn = new JButton("VAF...");
     private final JButton resetBtn = new JButton("Reset");
-    private final JButton changeLanguageBtn = new JButton("Change Language");
+    private final Map<String, JTextField> rowTotalFields = new LinkedHashMap<>();
+    //private final JButton changeLanguageBtn = new JButton("Change Language");
+
 
     private final ProjectData projectData;
     private final FPService fpService;
 
     private final JLabel codeSizeValue = new JLabel("—");
-    private final JButton computeCodeSizeBtn = new JButton("Compute Code Size");
+    //private final JButton computeCodeSizeBtn = new JButton("Compute Code Size");
     private final CodeSizeService codeSizeService = new CodeSizeService();
+    private final Map<String, JTextField> rowTotalFields = new LinkedHashMap<>();
+
+    private final JTextField totalCountField = new JTextField(8);
+    private final JTextField finalFpField = new JTextField(8);
+    private final JTextField vafSumField = new JTextField(8);
+    private final JTextField currentLanguageField = new JTextField(10);
+
+    private final JTextField codeSizeField = new JTextField(10);
+
+    private final JButton computeFpBtn = new JButton("Compute FP");
+    private final JButton valueAdjustmentsBtn = new JButton("Value Adjustments");
+    private final JButton computeCodeSizeBtn = new JButton("Compute Code Size");
+    private final JButton changeLanguageBtn = new JButton("Change Language");
 
     public FunctionPointPanel(ProjectData data, FPService service) {
         this.projectData = data;
@@ -51,6 +65,14 @@ public class FunctionPointPanel extends JPanel {
         wireLanguageDialog();
         wireCodeSize();
         loadFromProjectData();
+        totalCountField.setEditable(false);
+        finalFpField.setEditable(false);
+        vafSumField.setEditable(false);
+        currentLanguageField.setEditable(false);
+        codeSizeField.setEditable(false);
+        currentLanguageField.setText(projectData.getLanguage());
+
+
     }
 
     private int readNonNegativeInt(JTextField field, String label) {
@@ -80,45 +102,45 @@ public class FunctionPointPanel extends JPanel {
         setEntryFromUI(FPType.EIF, "EIF", "EIF");
     }
     public void loadFromProjectData() {
-            loadOne(FPType.EI, "EI");
-            loadOne(FPType.EO, "EO");
-            loadOne(FPType.EQ, "EQ");
-            loadOne(FPType.ILF, "ILF");
-            loadOne(FPType.EIF, "EIF");
+        loadOne(FPType.EI, "EI");
+        loadOne(FPType.EO, "EO");
+        loadOne(FPType.EQ, "EQ");
+        loadOne(FPType.ILF, "ILF");
+        loadOne(FPType.EIF, "EIF");
 
-            int vafSum = fpService.computeVafSum(projectData);
-            vafSumValue.setText(String.valueOf(vafSum));
+        int vafSum = fpService.computeVafSum(projectData);
+        vafSumValue.setText(String.valueOf(vafSum));
 
-            int total = fpService.computeTotal(projectData);
-            totalCountValue.setText(String.valueOf(total));
+        int total = fpService.computeTotal(projectData);
+        totalCountValue.setText(String.valueOf(total));
 
-            double fp = fpService.computeFinalFP(projectData);
-            finalFpValue.setText(String.format("%.2f", fp));
+        double fp = fpService.computeFinalFP(projectData);
+        finalFpValue.setText(String.format("%.2f", fp));
 
-            setCurrentLanguage(projectData.getLanguage());}
+        setCurrentLanguage(projectData.getLanguage());}
 
-            private void loadOne(FPType type, String key) {
-            FPEntry entry = projectData.getEntry(type);
+    private void loadOne(FPType type, String key) {
+        FPEntry entry = projectData.getEntry(type);
 
-            JTextField field = countFields.get(key);
-            if (field != null) {
-                field.setText(String.valueOf(entry.getCount()));
-            }
+        JTextField field = countFields.get(key);
+        if (field != null) {
+            field.setText(String.valueOf(entry.getCount()));
+        }
 
-            ButtonGroup group = complexityGroups.get(key);
-            if (group != null) {
-                String complexity = entry.getComplexity().name();
+        ButtonGroup group = complexityGroups.get(key);
+        if (group != null) {
+            String complexity = entry.getComplexity().name();
 
-                for (java.util.Enumeration<AbstractButton> buttons = group.getElements(); buttons.hasMoreElements();) {
-                    AbstractButton button = buttons.nextElement();
-                    if (button.getActionCommand().equals(complexity)) {
-                        button.setSelected(true);
-                        break;
-                    }
+            for (java.util.Enumeration<AbstractButton> buttons = group.getElements(); buttons.hasMoreElements();) {
+                AbstractButton button = buttons.nextElement();
+                if (button.getActionCommand().equals(complexity)) {
+                    button.setSelected(true);
+                    break;
                 }
             }
+        }
     }
-    private void wireCompute() {
+    /*private void wireCompute() {
         computeBtn.addActionListener(e -> {
             try {
                 updateProjectDataFromUI();
@@ -147,6 +169,78 @@ public class FunctionPointPanel extends JPanel {
                 );
             }
         });
+    }*/
+    private void wireCompute() {
+        computeFpBtn.addActionListener(e -> {
+            try {
+                updateProjectDataFromUI();
+
+                // row totals
+                rowTotalFields.get("EI").setText(String.valueOf(
+                        projectData.getEntry(FPType.EI).getCount() *
+                                getWeight(FPType.EI, projectData.getEntry(FPType.EI).getComplexity())
+                ));
+                rowTotalFields.get("EO").setText(String.valueOf(
+                        projectData.getEntry(FPType.EO).getCount() *
+                                getWeight(FPType.EO, projectData.getEntry(FPType.EO).getComplexity())
+                ));
+                rowTotalFields.get("EQ").setText(String.valueOf(
+                        projectData.getEntry(FPType.EQ).getCount() *
+                                getWeight(FPType.EQ, projectData.getEntry(FPType.EQ).getComplexity())
+                ));
+                rowTotalFields.get("ILF").setText(String.valueOf(
+                        projectData.getEntry(FPType.ILF).getCount() *
+                                getWeight(FPType.ILF, projectData.getEntry(FPType.ILF).getComplexity())
+                ));
+                rowTotalFields.get("EIF").setText(String.valueOf(
+                        projectData.getEntry(FPType.EIF).getCount() *
+                                getWeight(FPType.EIF, projectData.getEntry(FPType.EIF).getComplexity())
+                ));
+
+                int total = fpService.computeTotal(projectData);
+                int vafSum = fpService.computeVafSum(projectData);
+                double finalFp = fpService.computeFinalFP(projectData);
+
+                totalCountField.setText(String.valueOf(total));
+                vafSumField.setText(String.valueOf(vafSum));
+                finalFpField.setText(String.format("%,.2f", finalFp));
+                currentLanguageField.setText(projectData.getLanguage());
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Please enter valid non-negative integers.",
+                        "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
+    }
+    private int getWeight(FPType type, Complexity c) {
+        return switch (type) {
+            case EI -> (c == Complexity.SIMPLE ? 3 : c == Complexity.AVERAGE ? 4 : 6);
+            case EO -> (c == Complexity.SIMPLE ? 4 : c == Complexity.AVERAGE ? 5 : 7);
+            case EQ -> (c == Complexity.SIMPLE ? 3 : c == Complexity.AVERAGE ? 4 : 6);
+            case ILF -> (c == Complexity.SIMPLE ? 7 : c == Complexity.AVERAGE ? 10 : 15);
+            case EIF -> (c == Complexity.SIMPLE ? 5 : c == Complexity.AVERAGE ? 7 : 10);
+        };
+    }
+    private void wireCodeSize() {
+        computeCodeSizeBtn.addActionListener(e -> {
+            try {
+                updateProjectDataFromUI();
+
+                double finalFp = fpService.computeFinalFP(projectData);
+                int codeSize = codeSizeService.computeCodeSize(projectData.getLanguage(), finalFp);
+
+                codeSizeField.setText(String.format("%,d", codeSize));
+                currentLanguageField.setText(projectData.getLanguage());
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Compute FP first before computing code size.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
     private void wireLanguageDialog() {
         changeLanguageBtn.addActionListener(e -> {
@@ -160,7 +254,7 @@ public class FunctionPointPanel extends JPanel {
             }
         });
     }
-    private void wireCodeSize() {
+    /*private void wireCodeSize() {
         computeCodeSizeBtn.addActionListener(e -> {
             try {
                 updateProjectDataFromUI();
@@ -186,7 +280,7 @@ public class FunctionPointPanel extends JPanel {
                         JOptionPane.ERROR_MESSAGE);
             }
         });
-    }
+    }*/
     private JComponent buildTopHeader() {
         JPanel top = new JPanel(new BorderLayout());
 
@@ -208,8 +302,8 @@ public class FunctionPointPanel extends JPanel {
         JPanel center = new JPanel(new GridBagLayout());
         center.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createEtchedBorder(),
-                "Enter Function Point Counts",
-                TitledBorder.LEFT,
+                "Weighting Factors",
+                TitledBorder.CENTER,
                 TitledBorder.TOP
         ));
 
@@ -234,6 +328,9 @@ public class FunctionPointPanel extends JPanel {
     private void addHeader(JPanel panel, GridBagConstraints gbc) {
         gbc.gridy = 0;
 
+        gbc.gridx = 5; gbc.weightx = 0.6;
+        panel.add(boldLabel(""), gbc);
+
         gbc.gridx = 0; gbc.weightx = 2;
         panel.add(boldLabel("Category"), gbc);
 
@@ -248,9 +345,13 @@ public class FunctionPointPanel extends JPanel {
 
         gbc.gridx = 4; gbc.weightx = 0.6;
         panel.add(boldLabel("Complex"), gbc);
+
+        gbc.gridx = 5;
+        panel.add(boldLabel("Row Total"), gbc);
     }
 
-    private void addFpRow(JPanel panel, GridBagConstraints gbc, int row, String key, String label) {
+    private void addFpRow(JPanel panel, GridBagConstraints gbc, int row, String key, String label)
+    {
         gbc.gridy = row;
 
         // Category label
@@ -265,15 +366,21 @@ public class FunctionPointPanel extends JPanel {
         panel.add(countField, gbc);
 
         // Complexity radios
-        JRadioButton simple = new JRadioButton();
-        JRadioButton avg = new JRadioButton();
-        JRadioButton complex = new JRadioButton();
+        JRadioButton simple = new JRadioButton("3");
+        JRadioButton avg = new JRadioButton("4");
+        JRadioButton complex = new JRadioButton("6");
 
         ButtonGroup group = new ButtonGroup();
         group.add(simple);
         group.add(avg);
         group.add(complex);
         complexityGroups.put(key, group);
+        JTextField rowTotalField = new JTextField(6);
+        rowTotalField.setEditable(false);
+        rowTotalFields.put(key, rowTotalField);
+
+        gbc.gridx = 5;
+        panel.add(rowTotalField, gbc);
 
         // Default = Average selected
         avg.setSelected(true);
@@ -291,40 +398,60 @@ public class FunctionPointPanel extends JPanel {
         simple.setActionCommand("SIMPLE");
         avg.setActionCommand("AVERAGE");
         complex.setActionCommand("COMPLEX");
+
+
+        rowTotalField.setEditable(false);
+        rowTotalFields.put(key, rowTotalField);
+
+        gbc.gridx = 5; gbc.weightx = 0.6;
+        panel.add(rowTotalField, gbc);
     }
 
     private JComponent buildBottomPanel() {
-        JPanel bottom = new JPanel(new BorderLayout(12, 12));
+            JPanel bottom = new JPanel(new BorderLayout(20, 10));
+            bottom.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Results panel
-        JPanel results = new JPanel(new GridLayout(3, 2, 10, 8));
-        results.setBorder(BorderFactory.createTitledBorder("Results"));
+            // LEFT SIDE BUTTONS
+            JPanel buttonPanel = new JPanel(new GridLayout(4, 1, 0, 10));
+            buttonPanel.add(computeFpBtn);
+            buttonPanel.add(valueAdjustmentsBtn);
+            buttonPanel.add(computeCodeSizeBtn);
+            buttonPanel.add(changeLanguageBtn);
 
-        results.add(new JLabel("Total Count:"));
-        results.add(totalCountValue);
+            // RIGHT SIDE FIELDS
+            JPanel valuePanel = new JPanel(new GridBagLayout());
+            GridBagConstraints gc = new GridBagConstraints();
+            gc.insets = new Insets(6, 10, 6, 10);
+            gc.fill = GridBagConstraints.HORIZONTAL;
+            gc.anchor = GridBagConstraints.WEST;
 
-        results.add(new JLabel("VAF Sum:"));
-        results.add(vafSumValue);
+            // Row 1: Final FP
+            gc.gridx = 0; gc.gridy = 0;
+            valuePanel.add(new JLabel(""), gc);
+            gc.gridx = 1;
+            valuePanel.add(finalFpField, gc);
 
-        results.add(new JLabel("Final FP:"));
-        finalFpValue.setFont(new Font("Arial", Font.BOLD, 12));
-        results.add(finalFpValue);
+            // Row 2: VAF Sum
+            gc.gridx = 0; gc.gridy = 1;
+            valuePanel.add(new JLabel(""), gc);
+            gc.gridx = 1;
+            valuePanel.add(vafSumField, gc);
 
-        results.add(new JLabel("Code Size:"));
-        results.add(codeSizeValue);
+            // Row 3: Current Language + Code Size
+            gc.gridx = 0; gc.gridy = 2;
+            valuePanel.add(new JLabel("Current Language"), gc);
+            gc.gridx = 1;
+            valuePanel.add(currentLanguageField, gc);
 
-        bottom.add(results, BorderLayout.CENTER);
+            gc.gridx = 2;
+            valuePanel.add(codeSizeField, gc);
 
-        // Buttons panel
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        buttons.add(vafBtn);     // wiring Day 4
-        buttons.add(resetBtn);   // wired today
-        buttons.add(computeBtn); // wiring Day 3
-        bottom.add(buttons, BorderLayout.SOUTH);
-        buttons.add(computeCodeSizeBtn);
+            bottom.add(buttonPanel, BorderLayout.WEST);
+            bottom.add(valuePanel, BorderLayout.CENTER);
 
-        return bottom;
-    }
+            return bottom;
+        }
+
 
     private JLabel boldLabel(String text) {
         JLabel l = new JLabel(text);

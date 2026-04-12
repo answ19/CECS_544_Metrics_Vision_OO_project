@@ -7,6 +7,8 @@ public class NewProjectDialog extends JDialog {
 
     private final JTextField projectNameField = new JTextField(20);
     private final JTextField creatorNameField = new JTextField(20);
+    private final JTextField productNameField = new JTextField(20);
+    private final JTextArea commentsArea = new JTextArea(4, 20);
     private boolean saved = false;
 
     public NewProjectDialog(Window owner) {
