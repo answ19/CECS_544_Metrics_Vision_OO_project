@@ -12,6 +12,8 @@ import model.FPType;
 import model.ProjectData;
 import service.FPService;
 import service.FileService;
+import model.UcpData;
+import service.UcpService;
 
 public class MainFrame extends JFrame {
 
@@ -21,6 +23,9 @@ public class MainFrame extends JFrame {
     private final FileService fileService = new FileService();
 
     private ProjectData pendingProjectData = null;
+
+    private final UcpData ucpData = new UcpData();
+    private final UcpService ucpService = new UcpService();
 
     public MainFrame() {
         setTitle("CECS 544 Metrics Suite");
@@ -66,6 +71,14 @@ public class MainFrame extends JFrame {
         fpMenu.add(enterFPItem);
         metricsMenu.add(fpMenu);
 
+        JMenuItem enterUcpItem = new JMenuItem("Use Case Points");
+        metricsMenu.add(enterUcpItem);
+        enterUcpItem.addActionListener(e -> {
+            UcpPanel panel = new UcpPanel(ucpData, ucpService);
+
+            tabbedPane.addTab("UCP", panel);
+            tabbedPane.setSelectedComponent(panel);
+        });
         JMenuItem languageItem = new JMenuItem("Language");
         preferencesMenu.add(languageItem);
 
@@ -177,6 +190,7 @@ public class MainFrame extends JFrame {
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
+
         });
 
         saveItem.addActionListener(e -> {
