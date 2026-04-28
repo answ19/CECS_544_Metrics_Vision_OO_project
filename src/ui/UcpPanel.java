@@ -22,11 +22,12 @@ public class UcpPanel extends JPanel {
 
     private final JTextField productivityField = new JTextField("20", 6);
     private final JTextField locPmField = new JTextField("700", 6);
-    private final JTextField locPerUcpField = new JTextField("100", 6);
+    private final JTextField locPerUcpField = new JTextField("120", 6);
 
     private final JTextField uawField = new JTextField(8);
     private final JTextField uucwField = new JTextField(8);
     private final JTextField uucpField = new JTextField(8);
+    private final JTextField totalCountField = new JTextField(8);
     private final JTextField tcfField = new JTextField(8);
     private final JTextField ecfField = new JTextField(8);
     private final JTextField totalUcpField = new JTextField(8);
@@ -45,7 +46,8 @@ public class UcpPanel extends JPanel {
         setLayout(new BorderLayout(12, 12));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        for (JTextField f : new JTextField[]{uawField, uucwField, uucpField, tcfField, ecfField, totalUcpField, hoursField, locField, pmField}) {
+        for (JTextField f : new JTextField[]{uawField, uucwField, uucpField, totalCountField,
+                tcfField, ecfField, totalUcpField, hoursField, locField, pmField}) {
             f.setEditable(false);
         }
 
@@ -102,6 +104,10 @@ public class UcpPanel extends JPanel {
         gc.gridx = 5; panel.add(uucpField, gc);
 
         y++;
+        gc.gridx = 0; gc.gridy = y; panel.add(new JLabel("Total Count"), gc);
+        gc.gridx = 1; panel.add(totalCountField, gc);
+
+        y++;
         gc.gridx = 0; gc.gridy = y; panel.add(new JLabel("Total UCP"), gc);
         gc.gridx = 1; panel.add(totalUcpField, gc);
         gc.gridx = 2; panel.add(new JLabel("Estimated Hours"), gc);
@@ -154,6 +160,7 @@ public class UcpPanel extends JPanel {
                 uawField.setText(String.valueOf(r.getUaw()));
                 uucwField.setText(String.valueOf(r.getUucw()));
                 uucpField.setText(String.valueOf(r.getUucp()));
+                totalCountField.setText(String.valueOf(r.getUaw() + r.getUucw()));
                 tcfField.setText(String.format("%.2f", r.getTcf()));
                 ecfField.setText(String.format("%.2f", r.getEcf()));
                 totalUcpField.setText(String.format("%.2f", r.getTotalUcp()));

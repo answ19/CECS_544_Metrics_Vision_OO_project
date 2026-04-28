@@ -19,7 +19,7 @@ public class UcpData {
     // editable defaults required by assignment
     private double productivityFactor = 20.0;
     private double locPerPm = 700.0;
-    private double locPerUcp = 100.0;
+    private double locPerUcp = 120.0;
 
     public int getSimpleActors() { return simpleActors; }
     public void setSimpleActors(int v) { simpleActors = v; }

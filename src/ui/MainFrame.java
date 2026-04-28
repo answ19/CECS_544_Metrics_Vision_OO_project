@@ -24,7 +24,6 @@ public class MainFrame extends JFrame {
 
     private ProjectData pendingProjectData = null;
 
-    private final UcpData ucpData = new UcpData();
     private final UcpService ucpService = new UcpService();
 
     public MainFrame() {
@@ -74,11 +73,16 @@ public class MainFrame extends JFrame {
         JMenuItem enterUcpItem = new JMenuItem("Use Case Points");
         metricsMenu.add(enterUcpItem);
         enterUcpItem.addActionListener(e -> {
-            UcpPanel panel = new UcpPanel(ucpData, ucpService);
+            String tabTitle = JOptionPane.showInputDialog(this, "Enter window name:", "UCP Window", JOptionPane.PLAIN_MESSAGE);
+            if (tabTitle == null || tabTitle.trim().isEmpty()) tabTitle = "UCP";
 
-            tabbedPane.addTab("UCP", panel);
+            UcpData newUcpData = new UcpData();
+            UcpPanel panel = new UcpPanel(newUcpData, ucpService);
+
+            tabbedPane.addTab(tabTitle, panel);
             tabbedPane.setSelectedComponent(panel);
         });
+
         JMenuItem languageItem = new JMenuItem("Language");
         preferencesMenu.add(languageItem);
 
@@ -190,7 +194,6 @@ public class MainFrame extends JFrame {
                             JOptionPane.ERROR_MESSAGE);
                 }
             }
-
         });
 
         saveItem.addActionListener(e -> {
