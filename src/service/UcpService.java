@@ -6,9 +6,8 @@ import model.UcpResult;
 public class UcpService {
 
     // Technical factor weights (13)
-    // T1..T13: 2,1,1,1,1,0.5,0.5,2,1,1,1,1,1
     private static final double[] T_WEIGHTS = {
-            2, 1, 1, 1, 1, 0.5, 0.5, 2, 1, 1, 1, 1, 1
+            2, 1, 1, 1, 0.6, 0.5, 0.5, 2, 1, 1, 1, 1, 1
     };
 
     // Environmental factor weights (8)
