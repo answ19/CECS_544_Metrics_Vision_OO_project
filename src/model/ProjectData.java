@@ -91,4 +91,13 @@ public class ProjectData {
             vaf[i] = 0;
         }
     }
+    private SmiData smiData;
+
+    public SmiData getSmiData() {
+        return smiData;
+    }
+
+    public void setSmiData(SmiData smiData) {
+        this.smiData = smiData;
+    }
 }
