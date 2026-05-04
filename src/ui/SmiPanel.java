@@ -14,9 +14,14 @@ public class SmiPanel extends JPanel {
     private final SmiService service;
 
     private final DefaultTableModel model = new DefaultTableModel(
-            new Object[]{"Total Modules", "Added Modules", "Changed Modules", "Deleted Modules", "SMI"}, 0
-    );
+             new Object[]{"SMI", "Modules Added", "Modules Changed", "Modules Deleted", "Total Modules"},0
+    ) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return column == 1 || column == 2 || column == 3;
+        }
 
+    };
     private final JTable table = new JTable(model);
     private final JButton addRowBtn = new JButton("Add Row");
     private final JButton computeBtn = new JButton("Compute Index");
@@ -63,13 +68,14 @@ public class SmiPanel extends JPanel {
 
         for (SmiRow row : data.getRows()) {
             model.addRow(new Object[]{
-                    row.getTotalModules(),
+                    String.format("%.2f", row.getSmi()),
                     row.getAddedModules(),
                     row.getChangedModules(),
                     row.getDeletedModules(),
-                    String.format("%.2f", row.getSmi())
+                    row.getTotalModules()
             });
         }
+
     }
 
     private void saveToData() {
@@ -78,10 +84,11 @@ public class SmiPanel extends JPanel {
         for (int i = 0; i < model.getRowCount(); i++) {
             SmiRow row = new SmiRow();
 
-            row.setTotalModules(readInt(i, 0));
+            row.setSmi(0.0);
             row.setAddedModules(readInt(i, 1));
             row.setChangedModules(readInt(i, 2));
             row.setDeletedModules(readInt(i, 3));
+            row.setTotalModules(0); // computed later by service
 
             data.getRows().add(row);
         }
