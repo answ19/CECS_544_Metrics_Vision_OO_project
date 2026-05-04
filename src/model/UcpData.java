@@ -21,6 +21,16 @@ public class UcpData {
     private double locPerPm = 700.0;
     private double locPerUcp = 120.0;
 
+    private String tabName = "UCP";
+
+    public String getTabName() {
+        return tabName;
+    }
+
+    public void setTabName(String tabName) {
+        this.tabName = tabName;
+    }
+
     public int getSimpleActors() { return simpleActors; }
     public void setSimpleActors(int v) { simpleActors = v; }
 

@@ -16,102 +16,163 @@ public class FileService {
         try (PrintWriter out = new PrintWriter(new FileWriter(file))) {
             out.println("projectCount=" + projects.size());
 
-            for (int p = 0; p < projects.size(); p++) {
-                ProjectData data = projects.get(p);
-                String prefix = "project." + p + ".";
+            for (int i = 0; i < projects.size(); i++) {
+                ProjectData data = projects.get(i);
+                String p = "project." + i + ".";
 
-                out.println(prefix + "projectName=" + data.getProjectName());
-                out.println(prefix + "creatorName=" + data.getCreatorName());
-                out.println(prefix + "language=" + data.getLanguage());
+                out.println(p + "projectName=" + safe(data.getProjectName()));
+                out.println(p + "paneName=" + safe(data.getPaneName()));
+                out.println(p + "creatorName=" + safe(data.getCreatorName()));
+                out.println(p + "language=" + safe(data.getLanguage()));
+                out.println(p + "metricType=" + safe(data.getMetricType()));
+                if ("FP".equals(data.getMetricType())) {
+                    for (FPType type : FPType.values()) {
+                        FPEntry entry = data.getEntry(type);
+                        out.println(p + type.name() + ".count=" + entry.getCount());
+                        out.println(p + type.name() + ".complexity=" + entry.getComplexity().name());
+                    }
 
-                for (FPType type : FPType.values()) {
-                    FPEntry entry = data.getEntry(type);
-                    out.println(prefix + type.name() + ".count=" + entry.getCount());
-                    out.println(prefix + type.name() + ".complexity=" + entry.getComplexity().name());
+                    for (int v = 0; v < data.getVaf().length; v++) {
+                        out.println(p + "VAF." + v + "=" + data.getVaf()[v]);
+                    }
                 }
+                if ("UCP".equals(data.getMetricType())) {
+                    UcpData ucp = data.getUcpData();
 
-                int[] vaf = data.getVaf();
-                for (int i = 0; i < vaf.length; i++) {
-                    out.println(prefix + "VAF." + i + "=" + vaf[i]);
+                    out.println(p + "simpleActors=" + ucp.getSimpleActors());
+                    out.println(p + "averageActors=" + ucp.getAverageActors());
+                    out.println(p + "complexActors=" + ucp.getComplexActors());
+
+                    out.println(p + "simpleUseCases=" + ucp.getSimpleUseCases());
+                    out.println(p + "averageUseCases=" + ucp.getAverageUseCases());
+                    out.println(p + "complexUseCases=" + ucp.getComplexUseCases());
+
+                    out.println(p + "productivityFactor=" + ucp.getProductivityFactor());
+                    out.println(p + "locPerPm=" + ucp.getLocPerPm());
+                    out.println(p + "locPerUcp=" + ucp.getLocPerUcp());
+
+                    for (int t = 0; t < ucp.getTechnicalFactors().length; t++) {
+                        out.println(p + "TCF." + t + "=" + ucp.getTechnicalFactors()[t]);
+                    }
+
+                    for (int e = 0; e < ucp.getEnvironmentalFactors().length; e++) {
+                        out.println(p + "ECF." + e + "=" + ucp.getEnvironmentalFactors()[e]);
+                    }
                 }
-
-                FPService fpService = new FPService();
-                int total = fpService.computeTotal(data);
-                double fp = fpService.computeFinalFP(data);
-
-                out.println(prefix + "totalCount=" + total);
-                out.println(prefix + "computedFP=" + fp);
             }
         }
     }
 
     public List<ProjectData> loadAll(File file) throws IOException {
-        List<ProjectData> projects = new ArrayList<>();
+            List<String> lines = new ArrayList<>();
+            int projectCount = 0;
 
-        try (BufferedReader in = new BufferedReader(new FileReader(file))) {
-            String line;
+            try (BufferedReader in = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    lines.add(line);
 
-            while ((line = in.readLine()) != null) {
+                    String[] parts = line.split("=", 2);
+                    if (parts.length == 2 && parts[0].equals("projectCount")) {
+                        projectCount = Integer.parseInt(parts[1]);
+                    }
+                }
+            }
+
+            List<ProjectData> projects = new ArrayList<>();
+            for (int i = 0; i < projectCount; i++) {
+                projects.add(new ProjectData());
+            }
+
+            for (String line : lines) {
                 String[] parts = line.split("=", 2);
                 if (parts.length != 2) continue;
 
                 String key = parts[0];
                 String value = parts[1];
 
-                if (!key.startsWith("project.")) {
-                    continue;
-                }
+                if (!key.startsWith("project.")) continue;
 
                 String rest = key.substring("project.".length());
-                int dot = rest.indexOf('.');
+                int dot = rest.indexOf(".");
                 if (dot < 0) continue;
 
-                int projectIndex = Integer.parseInt(rest.substring(0, dot));
-                String fieldKey = rest.substring(dot + 1);
+                int index = Integer.parseInt(rest.substring(0, dot));
+                String field = rest.substring(dot + 1);
 
-                while (projects.size() <= projectIndex) {
-                    projects.add(new ProjectData());
-                }
+                if (index < 0 || index >= projects.size()) continue;
 
-                ProjectData data = projects.get(projectIndex);
+                ProjectData data = projects.get(index);
 
-                switch (fieldKey) {
+                switch (field) {
                     case "projectName" -> data.setProjectName(value);
+                    case "paneName" -> data.setPaneName(value);
                     case "creatorName" -> data.setCreatorName(value);
                     case "language" -> data.setLanguage(value);
+                    case "metricType" -> data.setMetricType(value);
                     default -> {
-                        if (fieldKey.startsWith("VAF.")) {
-                            int index = Integer.parseInt(fieldKey.substring(4));
-                            data.getVaf()[index] = Integer.parseInt(value);
-                        } else if (fieldKey.endsWith(".count")) {
-                            String typeName = fieldKey.substring(0, fieldKey.indexOf(".count"));
+                        if (field.startsWith("VAF.")) {
+                            int vafIndex = Integer.parseInt(field.substring(4));
+                            data.getVaf()[vafIndex] = Integer.parseInt(value);
+                        } else if (field.endsWith(".count")) {
+                            String typeName = field.substring(0, field.indexOf(".count"));
                             FPType type = FPType.valueOf(typeName);
                             data.getEntry(type).setCount(Integer.parseInt(value));
-                        } else if (fieldKey.endsWith(".complexity")) {
-                            String typeName = fieldKey.substring(0, fieldKey.indexOf(".complexity"));
+                        } else if (field.endsWith(".complexity")) {
+                            String typeName = field.substring(0, field.indexOf(".complexity"));
                             FPType type = FPType.valueOf(typeName);
                             data.getEntry(type).setComplexity(Complexity.valueOf(value));
+
+                        }else if (field.equals("simpleActors")) {
+                            ensureUcpData(data).setSimpleActors(Integer.parseInt(value));
+                        } else if (field.equals("averageActors")) {
+                            ensureUcpData(data).setAverageActors(Integer.parseInt(value));
+                        } else if (field.equals("complexActors")) {
+                            ensureUcpData(data).setComplexActors(Integer.parseInt(value));
+                        } else if (field.equals("simpleUseCases")) {
+                            ensureUcpData(data).setSimpleUseCases(Integer.parseInt(value));
+                        } else if (field.equals("averageUseCases")) {
+                            ensureUcpData(data).setAverageUseCases(Integer.parseInt(value));
+                        } else if (field.equals("complexUseCases")) {
+                            ensureUcpData(data).setComplexUseCases(Integer.parseInt(value));
+                        } else if (field.equals("productivityFactor")) {
+                            ensureUcpData(data).setProductivityFactor(Double.parseDouble(value));
+                        } else if (field.equals("locPerPm")) {
+                            ensureUcpData(data).setLocPerPm(Double.parseDouble(value));
+                        } else if (field.equals("locPerUcp")) {
+                            ensureUcpData(data).setLocPerUcp(Double.parseDouble(value));
+                        } else if (field.startsWith("TCF.")) {
+                            int tcfindex = Integer.parseInt(field.substring(4));
+                            ensureUcpData(data).getTechnicalFactors()[index] = Integer.parseInt(value);
+                        } else if (field.startsWith("ECF.")) {
+                            int ecfindex = Integer.parseInt(field.substring(4));
+                            ensureUcpData(data).getEnvironmentalFactors()[index] = Integer.parseInt(value);
                         }
+
                     }
                 }
             }
+
+            return projects;
         }
 
-        return projects;
-    }
-
-    // Backward compatibility: save/load one project if older code still calls these
-    public void save(ProjectData data, File file) throws IOException {
-        List<ProjectData> one = new ArrayList<>();
-        one.add(data);
-        saveAll(one, file);
+        public void save(ProjectData data, File file) throws IOException {
+        List<ProjectData> list = new ArrayList<>();
+        list.add(data);
+        saveAll(list, file);
     }
 
     public ProjectData load(File file) throws IOException {
-        List<ProjectData> projects = loadAll(file);
-        if (projects.isEmpty()) {
-            return new ProjectData();
+        List<ProjectData> list = loadAll(file);
+        return list.isEmpty() ? new ProjectData() : list.get(0);
+    }
+    private UcpData ensureUcpData(ProjectData data) {
+        if (data.getUcpData() == null) {
+            data.setUcpData(new UcpData());
         }
-        return projects.get(0);
+        return data.getUcpData();
+    }
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

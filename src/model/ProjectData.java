@@ -3,21 +3,40 @@ package model;
 import java.util.EnumMap;
 import java.util.Map;
 
+
 public class ProjectData {
     private String projectName = "";
     private String creatorName = "";
     private String language = "Java";
+    private String paneName = "";
 
     private Map<FPType, FPEntry> entries = new EnumMap<>(FPType.class);
 
     private int[] vaf = new int[14];
+    private String metricType = "FP";
+    private UcpData ucpData;
 
+    public String getMetricType() {
+        return metricType;
+    }
+
+
+    public void setMetricType(String metricType) {
+        this.metricType = metricType;
+    }
     public ProjectData() {
         for (FPType type : FPType.values()) {
             entries.put(type, new FPEntry());
         }
     }
 
+    public UcpData getUcpData() {
+        return ucpData;
+    }
+
+    public void setUcpData(UcpData ucpData) {
+        this.ucpData = ucpData;
+    }
     public FPEntry getEntry(FPType type) {
         return entries.get(type);
     }
@@ -37,7 +56,13 @@ public class ProjectData {
     public void setLanguage(String language) {
         this.language = language;
     }
+    public String getPaneName() {
+        return paneName;
+    }
 
+    public void setPaneName(String paneName) {
+        this.paneName = paneName;
+    }
     public String getProjectName() {
         return projectName;
     }

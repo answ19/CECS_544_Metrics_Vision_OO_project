@@ -123,11 +123,18 @@ public class UcpPanel extends JPanel {
     }
 
     private void loadDefaults() {
+        simpleActorsField.setText(String.valueOf(data.getSimpleActors()));
+        averageActorsField.setText(String.valueOf(data.getAverageActors()));
+        complexActorsField.setText(String.valueOf(data.getComplexActors()));
+
+        simpleUseCasesField.setText(String.valueOf(data.getSimpleUseCases()));
+        averageUseCasesField.setText(String.valueOf(data.getAverageUseCases()));
+        complexUseCasesField.setText(String.valueOf(data.getComplexUseCases()));
+
         productivityField.setText(String.valueOf(data.getProductivityFactor()));
         locPmField.setText(String.valueOf(data.getLocPerPm()));
         locPerUcpField.setText(String.valueOf(data.getLocPerUcp()));
     }
-
     private void wireButtons() {
         tcfBtn.addActionListener(e -> {
             Window w = SwingUtilities.getWindowAncestor(this);
@@ -187,5 +194,20 @@ public class UcpPanel extends JPanel {
         double v = Double.parseDouble(f.getText().trim());
         if (v < 0) throw new NumberFormatException("negative");
         return v;
+    }
+    public UcpData getUcpData() {
+        data.setSimpleActors(readInt(simpleActorsField));
+        data.setAverageActors(readInt(averageActorsField));
+        data.setComplexActors(readInt(complexActorsField));
+
+        data.setSimpleUseCases(readInt(simpleUseCasesField));
+        data.setAverageUseCases(readInt(averageUseCasesField));
+        data.setComplexUseCases(readInt(complexUseCasesField));
+
+        data.setProductivityFactor(readDouble(productivityField));
+        data.setLocPerPm(readDouble(locPmField));
+        data.setLocPerUcp(readDouble(locPerUcpField));
+
+        return data;
     }
 }
