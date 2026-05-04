@@ -18,6 +18,7 @@ public class MainFrame extends JFrame {
     private final FileService fileService = new FileService();
 
     private final UcpService ucpService = new UcpService();
+    private final SmiService smiService = new SmiService();
 
     private String currentProjectName = "";
     private String currentCreatorName = "";
@@ -50,6 +51,10 @@ public class MainFrame extends JFrame {
         JMenuItem openItem = new JMenuItem("Open");
         JMenuItem saveItem = new JMenuItem("Save");
         JMenuItem exitItem = new JMenuItem("Exit");
+
+        JMenuItem enterSmiItem = new JMenuItem("Software Maturity Index");
+        metricsMenu.add(enterSmiItem);
+        enterSmiItem.addActionListener(e -> createSmiTab());
 
         fileMenu.add(newItem);
         fileMenu.add(openItem);
@@ -92,6 +97,31 @@ public class MainFrame extends JFrame {
         openItem.addActionListener(e -> openProject());
     }
 
+    private void createSmiTab() {
+        if (currentProjectName == null || currentProjectName.isBlank()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please create a project first using File -> New.",
+                    "Project Required",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (tabbedPane.getComponentAt(i) instanceof SmiPanel) {
+                tabbedPane.setSelectedIndex(i);
+                JOptionPane.showMessageDialog(this,
+                        "Only one SMI panel is allowed per project.");
+                return;
+            }
+        }
+
+        SmiData data = new SmiData();
+        data.setTabName("SMI");
+
+        SmiPanel panel = new SmiPanel(data, smiService);
+        tabbedPane.addTab("SMI", panel);
+        tabbedPane.setSelectedComponent(panel);
+    }
     private void createNewProject() {
         NewProjectDialog dialog = new NewProjectDialog(this);
         dialog.setVisible(true);
@@ -231,6 +261,18 @@ public class MainFrame extends JFrame {
 
                 projectsToSave.add(data);
             }
+            else if (comp instanceof SmiPanel smiPanel) {
+                ProjectData data = new ProjectData();
+
+                data.setMetricType("SMI");
+                data.setProjectName(currentProjectName);
+                data.setCreatorName(currentCreatorName);
+                data.setLanguage(currentLanguage);
+                data.setPaneName(tabbedPane.getTitleAt(i));
+                data.setSmiData(smiPanel.getSmiData());
+
+                projectsToSave.add(data);
+            }
         }
         if (projectsToSave.isEmpty()) {
             JOptionPane.showMessageDialog(this,
@@ -307,8 +349,17 @@ public class MainFrame extends JFrame {
 
                     UcpPanel panel = new UcpPanel(ucpData, ucpService);
                     tabbedPane.addTab(paneName, panel);
+                   else if ("SMI".equalsIgnoreCase(data.getMetricType())) {
+                        SmiData smiData = data.getSmiData();
 
-                } else {
+                        if (smiData == null) {
+                            smiData = new SmiData();
+                            data.setSmiData(smiData);
+                        }
+
+                        SmiPanel panel = new SmiPanel(smiData, smiService);
+                        tabbedPane.addTab(paneName, panel);}
+                   else {
                     FunctionPointPanel panel = new FunctionPointPanel(data, fpService);
                     panel.loadFromProjectData();
                     tabbedPane.addTab(paneName, panel);
