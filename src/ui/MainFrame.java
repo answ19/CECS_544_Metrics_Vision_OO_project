@@ -18,17 +18,27 @@ public class MainFrame extends JFrame {
     private final FileService fileService = new FileService();
 
     private final UcpService ucpService = new UcpService();
+    private final SmiService smiService = new SmiService();
 
     private String currentProjectName = "";
     private String currentCreatorName = "";
     private String currentLanguage = "Java";
+    private JMenu fpMenu;
+    private JMenuItem enterUcpItem;
+    private JMenuItem enterSmiItem;
+    private boolean dirty = false;
 
     public MainFrame() {
         setTitle("CECS 544 Metrics Suite");
         setSize(1000, 700);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                handleExit();
+            }
+        });
         setLayout(new BorderLayout());
         add(tabbedPane, BorderLayout.CENTER);
 
@@ -36,7 +46,9 @@ public class MainFrame extends JFrame {
 
         setVisible(true);
     }
-
+    private void markDirty() {
+        dirty = true;
+    }
     private void createMenuBar() {
         JMenuBar menuBar = new JMenuBar();
 
@@ -51,6 +63,12 @@ public class MainFrame extends JFrame {
         JMenuItem saveItem = new JMenuItem("Save");
         JMenuItem exitItem = new JMenuItem("Exit");
 
+        enterSmiItem = new JMenuItem("Software Maturity Index");
+
+
+        metricsMenu.add(enterSmiItem);
+        enterSmiItem.addActionListener(e -> createSmiTab());
+
         fileMenu.add(newItem);
         fileMenu.add(openItem);
         fileMenu.add(saveItem);
@@ -60,11 +78,12 @@ public class MainFrame extends JFrame {
         JMenuItem languageItem = new JMenuItem("Languages");
         preferencesMenu.add(languageItem);
 
-        JMenu fpMenu = new JMenu("Function Points");
+        fpMenu = new JMenu("Function Points");
         JMenuItem enterFPItem = new JMenuItem("Enter FP Data");
         fpMenu.add(enterFPItem);
 
-        JMenuItem enterUcpItem = new JMenuItem("Use Case Points");
+        enterUcpItem = new JMenuItem("Use Case Points");
+        setMetricsEnabled(false);
 
         metricsMenu.add(fpMenu);
         metricsMenu.add(enterUcpItem);
@@ -77,7 +96,7 @@ public class MainFrame extends JFrame {
 
         setJMenuBar(menuBar);
 
-        exitItem.addActionListener(e -> System.exit(0));
+        exitItem.addActionListener(e -> handleExit());
 
         newItem.addActionListener(e -> createNewProject());
 
@@ -90,8 +109,67 @@ public class MainFrame extends JFrame {
         saveItem.addActionListener(e -> saveProject());
 
         openItem.addActionListener(e -> openProject());
+        markDirty();
+
+    }
+    private void handleExit() {
+        if (!dirty) {
+            System.exit(0);
+        }
+
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "You have unsaved changes. Save before exiting?",
+                "Unsaved Changes",
+                JOptionPane.YES_NO_CANCEL_OPTION
+        );
+
+        if (choice == JOptionPane.CANCEL_OPTION || choice == JOptionPane.CLOSED_OPTION) {
+            return;
+        }
+
+        if (choice == JOptionPane.YES_OPTION) {
+            saveProject();
+            if (!dirty) {
+                System.exit(0);
+            }
+        } else {
+            System.exit(0);
+        }
     }
 
+    private void setMetricsEnabled(boolean enabled) {
+        fpMenu.setEnabled(enabled);
+        enterUcpItem.setEnabled(enabled);
+        enterSmiItem.setEnabled(enabled);
+    }
+
+    private void createSmiTab() {
+        if (currentProjectName == null || currentProjectName.isBlank()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please create a project first using File -> New.",
+                    "Project Required",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (tabbedPane.getComponentAt(i) instanceof SmiPanel) {
+                tabbedPane.setSelectedIndex(i);
+                JOptionPane.showMessageDialog(this,
+                        "Only one SMI panel is allowed per project.");
+                return;
+            }
+        }
+
+        SmiData data = new SmiData();
+        data.setTabName("SMI");
+
+        SmiPanel panel = new SmiPanel(data, smiService);
+        tabbedPane.addTab("SMI", panel);
+        tabbedPane.setSelectedComponent(panel);
+        dirty = true;
+    }
     private void createNewProject() {
         NewProjectDialog dialog = new NewProjectDialog(this);
         dialog.setVisible(true);
@@ -113,6 +191,8 @@ public class MainFrame extends JFrame {
         tabbedPane.removeAll();
 
         setTitle("CECS 544 Metrics Suite - " + currentProjectName);
+        setMetricsEnabled(true);
+        dirty = true;
     }
 
     private void createFunctionPointTab() {
@@ -146,6 +226,7 @@ public class MainFrame extends JFrame {
         tabbedPane.setSelectedComponent(panel);
 
         setTitle("CECS 544 Metrics Suite - " + currentProjectName);
+        dirty = true;
     }
 
     private void createUcpTab() {
@@ -167,6 +248,7 @@ public class MainFrame extends JFrame {
 
         tabbedPane.addTab(paneName, panel);
         tabbedPane.setSelectedComponent(panel);
+        dirty = true;
     }
 
     private void changeLanguage() {
@@ -231,10 +313,22 @@ public class MainFrame extends JFrame {
 
                 projectsToSave.add(data);
             }
+            else if (comp instanceof SmiPanel smiPanel) {
+                ProjectData data = new ProjectData();
+
+                data.setMetricType("SMI");
+                data.setProjectName(currentProjectName);
+                data.setCreatorName(currentCreatorName);
+                data.setLanguage(currentLanguage);
+                data.setPaneName(tabbedPane.getTitleAt(i));
+                data.setSmiData(smiPanel.getSmiData());
+
+                projectsToSave.add(data);
+            }
         }
         if (projectsToSave.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "No FP or UCP panes found to save.",
+                    "No FP, UCP, or SMI panes found to save.",
                     "Save Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
@@ -252,7 +346,7 @@ public class MainFrame extends JFrame {
 
                 JOptionPane.showMessageDialog(this,
                         "Project saved successfully.");
-
+                dirty = false;
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this,
                         "Save failed: " + ex.getMessage(),
@@ -262,72 +356,89 @@ public class MainFrame extends JFrame {
         }
     }
 
-    private void openProject() {
-        JFileChooser chooser = new JFileChooser();
-        chooser.setFileFilter(new FileNameExtensionFilter("Metrics Suite Files (*.ms)", "ms"));
+        private void openProject() {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new FileNameExtensionFilter("Metrics Suite Files (*.ms)", "ms"));
 
-        int result = chooser.showOpenDialog(this);
+            int result = chooser.showOpenDialog(this);
 
-        if (result != JFileChooser.APPROVE_OPTION) return;
+            if (result != JFileChooser.APPROVE_OPTION) return;
 
-        try {
-            File file = chooser.getSelectedFile();
+            try {
+                File file = chooser.getSelectedFile();
 
-            List<ProjectData> loadedProjects = fileService.loadAll(file);
+                List<ProjectData> loadedProjects = fileService.loadAll(file);
 
-            tabbedPane.removeAll();
+                tabbedPane.removeAll();
 
-            if (loadedProjects.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "No project data found in file.",
-                        "Open Error",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            ProjectData first = loadedProjects.get(0);
-            currentProjectName = first.getProjectName();
-            currentCreatorName = first.getCreatorName();
-            currentLanguage = first.getLanguage();
-
-            for (ProjectData data : loadedProjects) {
-
-                String paneName = data.getPaneName();
-                if (paneName == null || paneName.isBlank()) {
-                    paneName = "Untitled Pane";
+                if (loadedProjects.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                            "No project data found in file.",
+                            "Open Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
 
-                if ("UCP".equalsIgnoreCase(data.getMetricType())) {
-                    UcpData ucpData = data.getUcpData();
+                ProjectData first = loadedProjects.get(0);
+                currentProjectName = first.getProjectName();
+                currentCreatorName = first.getCreatorName();
+                currentLanguage = first.getLanguage();
 
-                    if (ucpData == null) {
-                        ucpData = new UcpData();
-                        data.setUcpData(ucpData);
+                for (ProjectData data : loadedProjects) {
+
+                    String paneName = data.getPaneName();
+
+                    if (paneName == null || paneName.isBlank()) {
+                        paneName = "Untitled Pane";
                     }
 
-                    UcpPanel panel = new UcpPanel(ucpData, ucpService);
-                    tabbedPane.addTab(paneName, panel);
+                    if ("UCP".equalsIgnoreCase(data.getMetricType())) {
 
-                } else {
-                    FunctionPointPanel panel = new FunctionPointPanel(data, fpService);
-                    panel.loadFromProjectData();
-                    tabbedPane.addTab(paneName, panel);
+                        UcpData ucpData = data.getUcpData();
+
+                        if (ucpData == null) {
+                            ucpData = new UcpData();
+                            data.setUcpData(ucpData);
+                        }
+
+                        UcpPanel panel = new UcpPanel(ucpData, ucpService);
+                        tabbedPane.addTab(paneName, panel);
+
+                    } else if ("SMI".equalsIgnoreCase(data.getMetricType())) {
+
+                        SmiData smiData = data.getSmiData();
+
+                        if (smiData == null) {
+                            smiData = new SmiData();
+                            data.setSmiData(smiData);
+                        }
+
+                        SmiPanel panel = new SmiPanel(smiData, smiService);
+                        tabbedPane.addTab(paneName, panel);
+
+                    } else {
+
+                        FunctionPointPanel panel = new FunctionPointPanel(data, fpService);
+                        panel.loadFromProjectData();
+                        tabbedPane.addTab(paneName, panel);
+                    }
                 }
+
+                tabbedPane.setSelectedIndex(0);
+
+                if (currentProjectName == null || currentProjectName.isBlank()) {
+                    setTitle("CECS 544 Metrics Suite");
+                } else {
+                    setTitle("CECS 544 Metrics Suite - " + currentProjectName);
+                }
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Open failed: " + ex.getMessage(),
+                        "Open Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
+            setMetricsEnabled(true);
 
-            tabbedPane.setSelectedIndex(0);
-
-            if (currentProjectName == null || currentProjectName.isBlank()) {
-                setTitle("CECS 544 Metrics Suite");
-            } else {
-                setTitle("CECS 544 Metrics Suite - " + currentProjectName);
-            }
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Open failed: " + ex.getMessage(),
-                    "Open Error",
-                    JOptionPane.ERROR_MESSAGE);
         }
     }
-}

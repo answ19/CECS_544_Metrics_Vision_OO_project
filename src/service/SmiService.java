@@ -11,13 +11,8 @@ public class SmiService {
         for (int i = 0; i < data.getRows().size(); i++) {
             SmiRow row = data.getRows().get(i);
 
-            int total;
-            if (i == 0) {
-                total = row.getTotalModules();
-            } else {
-                total = previousTotal + row.getAddedModules() - row.getDeletedModules();
-                row.setTotalModules(total);
-            }
+            int total = previousTotal + row.getAddedModules() - row.getDeletedModules();
+            row.setTotalModules(total);
 
             if (total <= 0) {
                 row.setSmi(0.0);

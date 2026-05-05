@@ -25,7 +25,8 @@ public class FileService {
                 out.println(p + "creatorName=" + safe(data.getCreatorName()));
                 out.println(p + "language=" + safe(data.getLanguage()));
                 out.println(p + "metricType=" + safe(data.getMetricType()));
-                if ("FP".equals(data.getMetricType())) {
+
+                if ("FP".equalsIgnoreCase(data.getMetricType())) {
                     for (FPType type : FPType.values()) {
                         FPEntry entry = data.getEntry(type);
                         out.println(p + type.name() + ".count=" + entry.getCount());
@@ -36,7 +37,8 @@ public class FileService {
                         out.println(p + "VAF." + v + "=" + data.getVaf()[v]);
                     }
                 }
-                if ("UCP".equals(data.getMetricType())) {
+
+                if ("UCP".equalsIgnoreCase(data.getMetricType())) {
                     UcpData ucp = data.getUcpData();
 
                     out.println(p + "simpleActors=" + ucp.getSimpleActors());
@@ -59,32 +61,37 @@ public class FileService {
                         out.println(p + "ECF." + e + "=" + ucp.getEnvironmentalFactors()[e]);
                     }
                 }
+
+                if ("SMI".equalsIgnoreCase(data.getMetricType())) {
+                    SmiData smi = data.getSmiData();
+
+                    if (smi != null) {
+                        out.println(p + "SMI.rowCount=" + smi.getRows().size());
+
+                        for (int r = 0; r < smi.getRows().size(); r++) {
+                            SmiRow row = smi.getRows().get(r);
+
+                            out.println(p + "SMI." + r + ".totalModules=" + row.getTotalModules());
+                            out.println(p + "SMI." + r + ".addedModules=" + row.getAddedModules());
+                            out.println(p + "SMI." + r + ".changedModules=" + row.getChangedModules());
+                            out.println(p + "SMI." + r + ".deletedModules=" + row.getDeletedModules());
+                            out.println(p + "SMI." + r + ".smi=" + row.getSmi());
+                        }
+                    } else {
+                        out.println(p + "SMI.rowCount=0");
+                    }
+                }
             }
         }
     }
 
     public List<ProjectData> loadAll(File file) throws IOException {
-            List<String> lines = new ArrayList<>();
-            int projectCount = 0;
+        List<ProjectData> projects = new ArrayList<>();
 
-            try (BufferedReader in = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    lines.add(line);
+        try (BufferedReader in = new BufferedReader(new FileReader(file))) {
+            String line;
 
-                    String[] parts = line.split("=", 2);
-                    if (parts.length == 2 && parts[0].equals("projectCount")) {
-                        projectCount = Integer.parseInt(parts[1]);
-                    }
-                }
-            }
-
-            List<ProjectData> projects = new ArrayList<>();
-            for (int i = 0; i < projectCount; i++) {
-                projects.add(new ProjectData());
-            }
-
-            for (String line : lines) {
+            while ((line = in.readLine()) != null) {
                 String[] parts = line.split("=", 2);
                 if (parts.length != 2) continue;
 
@@ -100,7 +107,9 @@ public class FileService {
                 int index = Integer.parseInt(rest.substring(0, dot));
                 String field = rest.substring(dot + 1);
 
-                if (index < 0 || index >= projects.size()) continue;
+                while (projects.size() <= index) {
+                    projects.add(new ProjectData());
+                }
 
                 ProjectData data = projects.get(index);
 
@@ -110,20 +119,61 @@ public class FileService {
                     case "creatorName" -> data.setCreatorName(value);
                     case "language" -> data.setLanguage(value);
                     case "metricType" -> data.setMetricType(value);
+
                     default -> {
-                        if (field.startsWith("VAF.")) {
+                        if (field.startsWith("SMI.")) {
+                            SmiData smiData = ensureSmiData(data);
+
+                            if (field.equals("SMI.rowCount")) {
+                                int count = Integer.parseInt(value);
+
+                                while (smiData.getRows().size() < count) {
+                                    smiData.getRows().add(new SmiRow());
+                                }
+
+                            } else {
+                                String smiRest = field.substring("SMI.".length());
+                                String[] smiParts = smiRest.split("\\.", 2);
+
+                                if (smiParts.length == 2) {
+                                    int rowIndex = Integer.parseInt(smiParts[0]);
+                                    String smiField = smiParts[1];
+
+                                    while (smiData.getRows().size() <= rowIndex) {
+                                        smiData.getRows().add(new SmiRow());
+                                    }
+
+                                    SmiRow row = smiData.getRows().get(rowIndex);
+
+                                    if (smiField.equals("totalModules")) {
+                                        row.setTotalModules(Integer.parseInt(value));
+                                    } else if (smiField.equals("addedModules")) {
+                                        row.setAddedModules(Integer.parseInt(value));
+                                    } else if (smiField.equals("changedModules")) {
+                                        row.setChangedModules(Integer.parseInt(value));
+                                    } else if (smiField.equals("deletedModules")) {
+                                        row.setDeletedModules(Integer.parseInt(value));
+                                    } else if (smiField.equals("smi")) {
+                                        row.setSmi(Double.parseDouble(value));
+                                    }
+                                }
+                            }
+
+                        } else if (field.startsWith("VAF.")) {
                             int vafIndex = Integer.parseInt(field.substring(4));
                             data.getVaf()[vafIndex] = Integer.parseInt(value);
+
                         } else if (field.endsWith(".count")) {
                             String typeName = field.substring(0, field.indexOf(".count"));
                             FPType type = FPType.valueOf(typeName);
                             data.getEntry(type).setCount(Integer.parseInt(value));
+
                         } else if (field.endsWith(".complexity")) {
                             String typeName = field.substring(0, field.indexOf(".complexity"));
                             FPType type = FPType.valueOf(typeName);
                             data.getEntry(type).setComplexity(Complexity.valueOf(value));
 
-                        }else if (field.equals("simpleActors")) {
+                        } else if (field.equals("simpleActors")) {
                             ensureUcpData(data).setSimpleActors(Integer.parseInt(value));
                         } else if (field.equals("averageActors")) {
                             ensureUcpData(data).setAverageActors(Integer.parseInt(value));
@@ -142,19 +192,19 @@ public class FileService {
                         } else if (field.equals("locPerUcp")) {
                             ensureUcpData(data).setLocPerUcp(Double.parseDouble(value));
                         } else if (field.startsWith("TCF.")) {
-                            int tcfindex = Integer.parseInt(field.substring(4));
-                            ensureUcpData(data).getTechnicalFactors()[index] = Integer.parseInt(value);
+                            int tcfIndex = Integer.parseInt(field.substring(4));
+                            ensureUcpData(data).getTechnicalFactors()[tcfIndex] = Integer.parseInt(value);
                         } else if (field.startsWith("ECF.")) {
-                            int ecfindex = Integer.parseInt(field.substring(4));
-                            ensureUcpData(data).getEnvironmentalFactors()[index] = Integer.parseInt(value);
+                            int ecfIndex = Integer.parseInt(field.substring(4));
+                            ensureUcpData(data).getEnvironmentalFactors()[ecfIndex] = Integer.parseInt(value);
                         }
-
                     }
                 }
             }
-
-            return projects;
         }
+
+        return projects;
+    }
 
         public void save(ProjectData data, File file) throws IOException {
         List<ProjectData> list = new ArrayList<>();
@@ -171,6 +221,12 @@ public class FileService {
             data.setUcpData(new UcpData());
         }
         return data.getUcpData();
+    }
+    private SmiData ensureSmiData(ProjectData data) {
+        if (data.getSmiData() == null) {
+            data.setSmiData(new SmiData());
+        }
+        return data.getSmiData();
     }
     private String safe(String value) {
         return value == null ? "" : value;
